@@ -1,0 +1,7 @@
+README.md
+setup.py
+franka.egg-info/PKG-INFO
+franka.egg-info/SOURCES.txt
+franka.egg-info/dependency_links.txt
+franka.egg-info/requires.txt
+franka.egg-info/top_level.txt

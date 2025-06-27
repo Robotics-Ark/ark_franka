@@ -10,6 +10,23 @@ simulator:
       - 0
       - -9.81  
     sim_frequency: 240                          # Time step for the simulation (default 240)
+  save_render: 
+    save_path: "render"  # path to save the rendered images
+    remove_existing: True                     # remove existing images in the render path
+    render_interval: 0.333                     # render every n-th step (default 1)
+    overwrite_file: True
+    extrinsics: 
+      look_at: [0.5, 0.0, 0.5]                # point to look at
+      distance: 1.5                          # distance from the point to look at
+      azimuth: 180                            # azimuth angle
+      elevation: 0.0                          # elevation angle
+    intrinsics: 
+      fov: 60.0                               # field of view in degrees
+      width: 640                              # width of the rendered image
+      height: 480                             # height of the rendered image
+      field_of_view: 60.0                      # field of view in degrees
+      near_plane: 0.01                     # near plane distance
+      far_plane: 100.0                        # far plane distance
 
 robots:
   - "robots/franka.yaml"
