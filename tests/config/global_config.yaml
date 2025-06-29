@@ -1,6 +1,6 @@
 
 simulator:
-  name: "das_bullet"                                # name of the node for ark graph
+  name: "franka_simulator"                      # name of the node for ark graph
   backend_type: "pybullet"                      # type of the backend
   node_frequency: 240                           # node frequency in Hz (default 240)
   config:                                       # simulator-specific

@@ -1,4 +1,0 @@
-ark
-franky
-numpy
-scipy
