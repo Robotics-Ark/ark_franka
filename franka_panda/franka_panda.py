@@ -50,9 +50,14 @@ class FrankaPanda(Robot):
 
         if self.sim == True: 
             self.publisher_name = self.name + "/joint_states/sim"
-            
+            self.component_channels_init({
+                self.publisher_name: joint_state_t
+            })
         else:
             self.publisher_name = self.name + "/joint_states"
+            self.component_channels_init({
+                self.publisher_name: joint_state_t
+            })
 
         self.joint_group_command = None
         self.cartesian_position_control_command = None
@@ -64,21 +69,18 @@ class FrankaPanda(Robot):
         '''
         if self.joint_group_command:
             cmd_dict = {}
-            for joint, goal in zip(list(self.joint_groups[group_name]["actuated_joints"]), cmd):
+            group_name = self.joint_group_command['name']
+            for joint, goal in zip(list(self.joint_groups[self.joint_group_command['name']]["actuated_joints"]), self.joint_group_command['cmd']):
                 cmd_dict[joint] = goal
             self._joint_cmd_msg = None
-            self.control_joint_group(group_name, cmd_dict)
-        elif self._cartesian_cmd_msg:
-            msg = self._cartesian_cmd_msg
-            group_name = msg.name
-            cmd = msg.cmd
-            cmd_dict = {}
-            for joint, goal in zip(list(self.joint_groups[group_name]["actuated_joints"]), cmd):
-                cmd_dict[joint] = goal
-            self._cartesian_cmd_msg = None
-            self.control_cartesian(group_name, cmd_dict)
-            
-        # print(self.get_joint_positions())
+            control_mode = self.joint_groups[group_name]["control_mode"]
+            self.control_joint_group(control_mode, cmd_dict)
+
+    def get_state(self) -> Dict[str, Any]:
+        """
+        Returns the current state of the robot.
+        This method is called by the base class to get the state of the robot.
+        """
         return self.get_joint_positions()
 
     def pack_data(self, state: Dict[str, Any]) -> Dict[str, Any]:
@@ -104,7 +106,7 @@ class FrankaPanda(Robot):
         }
 
     def _cartesian_position_command_callback(self, t, channel_name, msg): 
-        self._cartesian_cmd_msg = msg
+        self.cartesian_position_control_name = unpack.joint_group_command_t(msg)
 
     ####################################################
     ##       Franka Custom Control Methods            ##
@@ -119,11 +121,6 @@ class FrankaPanda(Robot):
     #         self._driver.pass_cartesian_control_cmd(control_mode, joints, cmd, **kwargs)
 
     #####################################################
-    def reset_component(self, channel: str, msg: Optional[Any] = None) -> None:
-        self.cartesian_position_control_command = None
-        self.joint_group_command = None
-        return super().reset_component(channel, msg)
-
 
 CONFIG_PATH = "panda.yaml"
 if __name__ == "__main__":
