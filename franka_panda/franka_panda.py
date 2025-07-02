@@ -50,16 +50,19 @@ class FrankaPanda(Robot):
 
         if self.sim == True: 
             self.publisher_name = self.name + "/joint_states/sim"
-            self.component_channels_init([
-                (self.publisher_name, joint_state_t)
-            ])
+            
         else:
             self.publisher_name = self.name + "/joint_states"
-            self.component_channels_init([
-                (self.publisher_name, joint_state_t)
-            ])
 
+<<<<<<< Updated upstream
     def get_robot_data(self):
+=======
+        self.component_channels_init({self.publisher_name: joint_state_t})
+        self.joint_group_command = None
+        self.cartesian_position_control_command = None
+
+    def control_robot(self):
+>>>>>>> Stashed changes
         '''
         will be called at the fequency dictated in the config
         handles the control of the robot and the 
@@ -69,6 +72,7 @@ class FrankaPanda(Robot):
             group_name = msg.name
             cmd = msg.cmd
             cmd_dict = {}
+<<<<<<< Updated upstream
             for joint, goal in zip(list(self.joint_groups[group_name]["actuated_joints"]), cmd):
                 cmd_dict[joint] = goal
             self._joint_cmd_msg = None
@@ -84,6 +88,22 @@ class FrankaPanda(Robot):
             self.control_cartesian(group_name, cmd_dict)
             
         # print(self.get_joint_positions())
+=======
+            # print(f"Received joint group command: {self.joint_group_command}")
+            group_name = self.joint_group_command['name']
+            for joint, goal in zip(list(self.joint_groups[self.joint_group_command['name']]["actuated_joints"]), self.joint_group_command['cmd']):
+                cmd_dict[joint] = goal
+            self._joint_cmd_msg = None
+            control_mode = self.joint_groups[group_name]["control_mode"]
+            # print(f"Controlling {group_name} with mode {control_mode} and command {cmd_dict}")
+            self.control_joint_group(control_mode, cmd_dict)
+
+    def get_state(self) -> Dict[str, Any]:
+        """
+        Returns the current state of the robot.
+        This method is called by the base class to get the state of the robot.
+        """
+>>>>>>> Stashed changes
         return self.get_joint_positions()
 
     def pack_data(self, pos_dict):
@@ -102,10 +122,21 @@ class FrankaPanda(Robot):
     ##      Franka Subscriber Callbacks               ##
     ####################################################
     def _joint_group_command_callback(self, t, channel_name, msg):
+<<<<<<< Updated upstream
         self._joint_cmd_msg = msg
 
     def _cartesian_position_command_callback(self, t, channel_name, msg): 
         self._cartesian_cmd_msg = msg
+=======
+        cmd, name = unpack.joint_group_command(msg)
+        self.joint_group_command = {
+            "cmd": cmd,
+            "name": name,
+        }
+
+    def _cartesian_position_command_callback(self, t, channel_name, msg): 
+        self.cartesian_position_control_name = unpack.joint_group_command_t(msg)
+>>>>>>> Stashed changes
 
     ####################################################
     ##       Franka Custom Control Methods            ##
@@ -120,6 +151,11 @@ class FrankaPanda(Robot):
             self._driver.pass_cartesian_control_cmd(control_mode, joints, cmd, **kwargs)
 
     #####################################################
+    def reset_component(self, channel: str, msg: Optional[Any] = None) -> None:
+        self.cartesian_position_control_command = None
+        self.joint_group_command = None
+        return super().reset_component(channel, msg)
+
 
 CONFIG_PATH = "panda.yaml"
 if __name__ == "__main__":
