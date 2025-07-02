@@ -1,0 +1,8 @@
+franka.egg-info/
+build/
+# Ignore Python bytecode files
+*.pyc
+__pycache__/
+franka/*.py
+# Infore render files in tests folder
+tests/render/

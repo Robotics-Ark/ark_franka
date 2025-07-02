@@ -1,13 +1,13 @@
 
 from ark.client.comm_infrastructure.base_node import BaseNode,  main
 import numpy as np
-from lcmtypes import joint_group_command_t, joint_single_command_t, header_t, stamp_t, joint_state_t
+from arktypes import joint_group_command_t, joint_single_command_t, header_t, stamp_t, joint_state_t
 
 __doc__ = (
     """Controls a singular joint in the ViperX"""
 )
 
-SIM = False
+SIM = True
 
 
 class FrankaControllerNode(BaseNode):
