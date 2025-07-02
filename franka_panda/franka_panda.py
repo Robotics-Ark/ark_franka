@@ -64,7 +64,6 @@ class FrankaPanda(Robot):
         '''
         if self.joint_group_command:
             cmd_dict = {}
-<<<<<<< Updated upstream
             for joint, goal in zip(list(self.joint_groups[group_name]["actuated_joints"]), cmd):
                 cmd_dict[joint] = goal
             self._joint_cmd_msg = None
@@ -80,22 +79,6 @@ class FrankaPanda(Robot):
             self.control_cartesian(group_name, cmd_dict)
             
         # print(self.get_joint_positions())
-=======
-            # print(f"Received joint group command: {self.joint_group_command}")
-            group_name = self.joint_group_command['name']
-            for joint, goal in zip(list(self.joint_groups[self.joint_group_command['name']]["actuated_joints"]), self.joint_group_command['cmd']):
-                cmd_dict[joint] = goal
-            self._joint_cmd_msg = None
-            control_mode = self.joint_groups[group_name]["control_mode"]
-            # print(f"Controlling {group_name} with mode {control_mode} and command {cmd_dict}")
-            self.control_joint_group(control_mode, cmd_dict)
-
-    def get_state(self) -> Dict[str, Any]:
-        """
-        Returns the current state of the robot.
-        This method is called by the base class to get the state of the robot.
-        """
->>>>>>> Stashed changes
         return self.get_joint_positions()
 
     def pack_data(self, state: Dict[str, Any]) -> Dict[str, Any]:
