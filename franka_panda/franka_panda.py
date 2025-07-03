@@ -8,17 +8,20 @@ import pprint
 from ark.client.comm_infrastructure.base_node import main
 from ark.system.component.robot import Robot, robot_control
 from ark.system.driver.robot_driver import RobotDriver
-from ark.system.pybullet.pybullet_robot_driver import BulletRobotDriver
+from franka_pybullet_driver import FrankaPyBulletDriver
 from ark.tools.log import log
-from arktypes import flag_t, joint_group_command_t, joint_state_t
+from arktypes import flag_t, joint_group_command_t, joint_state_t, task_space_command_t
 from arktypes.utils import unpack, pack
-# from franka_driver import FrankaResearch3Driver
-
 
 @dataclass
 class Drivers(Enum): 
-    PYBULLET_DRIVER = BulletRobotDriver
-    # DRIVER = FrankaResearch3Driver
+    PYBULLET_DRIVER = FrankaPyBulletDriver
+
+    try:
+        from franka_driver import FrankaResearch3Driver
+        DRIVER = FrankaResearch3Driver
+    except ImportError:
+        log.warn("FrankaResearch3Driver is failing, OS might be incompatible with the Real Franka Panda Robot")
     
 
 class FrankaPanda(Robot):
@@ -46,7 +49,7 @@ class FrankaPanda(Robot):
             self.cartesian_position_control_ch = self.cartesian_position_control_ch + "/sim"
 
         self.create_subscriber(self.joint_group_command_ch, joint_group_command_t, self._joint_group_command_callback)
-        self.create_subscriber(self.cartesian_position_control_ch, joint_group_command_t, self._cartesian_position_command_callback)
+        self.create_subscriber(self.cartesian_position_control_ch, task_space_command_t, self._cartesian_position_command_callback)
 
         if self.sim == True: 
             self.publisher_name = self.name + "/joint_states/sim"
@@ -75,6 +78,14 @@ class FrankaPanda(Robot):
             self._joint_cmd_msg = None
             control_mode = self.joint_groups[group_name]["control_mode"]
             self.control_joint_group(control_mode, cmd_dict)
+        elif self.cartesian_position_control_command:
+            group_name = self.cartesian_position_control_command['name']
+            control_mode = self.joint_groups[group_name]["control_mode"]
+            end_effector_idx = self.robot_config.get("end_effector_idx", 6)
+            self.control_cartesian(control_mode, cmd=self.cartesian_position_control_command, end_effector_idx=end_effector_idx)
+
+        self.joint_group_command = None
+        self.cartesian_position_control_command = None  
 
     def get_state(self) -> Dict[str, Any]:
         """
@@ -106,19 +117,23 @@ class FrankaPanda(Robot):
         }
 
     def _cartesian_position_command_callback(self, t, channel_name, msg): 
-        self.cartesian_position_control_name = unpack.joint_group_command_t(msg)
+        name, position, quaternion = unpack.task_space_command(msg)
+        self.cartesian_position_control_command = {
+            "name": name,
+            "position": position,
+            "quaternion": quaternion
+        }
 
     ####################################################
     ##       Franka Custom Control Methods            ##
     ##    note: control_joint_group is default        ##
     ####################################################
 
-    # @robot_control
-    # def control_cartesian(self, control_mode: str, joints: List[str], cmd: Dict[str, float], **kwargs) -> None: 
-    #     if self.sim == True: 
-    #         log.error("Cartesian Positon control is not availble for Franka in Pybullet yet") #TODO add Cartesian Position Control
-    #     elif self.sim == False: 
-    #         self._driver.pass_cartesian_control_cmd(control_mode, joints, cmd, **kwargs)
+    def control_cartesian(self, control_mode,cmd, end_effector_idx) -> None:
+        self._driver.pass_cartesian_control_cmd(control_mode,
+                                        position=cmd['position'],
+                                       quaternion=cmd['quaternion'],
+                                       end_effector_idx=end_effector_idx)
 
     #####################################################
 

@@ -2,12 +2,12 @@ name: "Franka"
 config:
   source: "urdf"
   urdf_path: "panda_with_gripper.urdf"
-  class_dir: "../franka_panda"
+  class_dir: "../../ark_robots/ark_franka/franka_panda"
   frequency: 240 # default is 240Hz
   base_position:
     - 0
     - 0
-    - 0
+    - 0.2
   base_orientation: # x, y, z, w
     - 0
     - 0
@@ -15,17 +15,17 @@ config:
     - 1
   use_fixed_base: true
   initial_configuration: 
-    - 0
-    - 0
-    - 0
-    - 0
-    - 0
-    - 0
-    - 0
-    - 0
-    - 0
-    - 0
-  ee_index: 9
+    - 0.0
+    - -0.785398
+    - 0.0
+    - -2.35619
+    - 0.0
+    - 1.5708
+    - 0.785398
+    - 0.0
+    - 0.0
+    - 0.0
+  ee_index: 6
   joint_groups: 
     arm: 
       control_mode: "position"
@@ -37,12 +37,10 @@ config:
         - "panda_joint5"
         - "panda_joint6"
         - "panda_joint7"
-        - "panda_hand_joint"
     gripper: 
       control_mode: "velocity"
       joints: 
         - "panda_finger_joint1"
-        - "panda_finger_joint2"
     all: 
       control_mode: "position"
       joints: 
@@ -53,9 +51,7 @@ config:
         - "panda_joint5"
         - "panda_joint6"
         - "panda_joint7"
-        - "panda_hand_joint"
         - "panda_finger_joint1"
-        - "panda_finger_joint2"
 
 
   real_config: 

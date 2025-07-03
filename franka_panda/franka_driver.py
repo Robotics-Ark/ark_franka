@@ -3,9 +3,10 @@ from ark.system.driver.robot_driver import RobotDriver
 
 from ark.tools.log import log
 from typing import Dict, Any, List
-from sensor_msgs.msg import JointState
 from franky import *
 from scipy.spatial.transform import Rotation
+from franky import Affine, CartesianMotion, Robot, Gripper, JointMotion, JointVelocityMotion, Twist, Duration, CartesianVelocityMotion
+
 
 import math
 import time
@@ -84,20 +85,15 @@ class FrankaResearch3Driver(RobotDriver):
 
         
 
-    def pass_cartesian_control_cmd(self, control_mode: str, joints: List[str], cmd: Dict[str, float], **kwargs) -> None:
-        values = list(cmd.values())
-        group = kwargs["group_name"]
-        if group == "arm":
-            if control_mode == "position": 
-                print(values)
-                motion = CartesianMotion(Affine(values[:3], values[3:]))
-            elif control_mode == "velocity":
-                # A cartesian velocity motion with linear (first argument) and angular (second argument) components
-                motion = CartesianVelocityMotion(Twist(values[:3], values[:3]), duration=Duration(500))
-            else:
-                log.error("Invalid Control Mode: recived "+ str(control_mode)+ "")
-        else: 
-            log.error("Invalid Group: recived "+ str(group) + "")
+    def pass_cartesian_control_cmd(self, control_mode, position, quaternion) -> None:
+        if control_mode == "position": 
+            motion = CartesianMotion(Affine(position, quaternion))
+        elif control_mode == "velocity":
+            # A cartesian velocity motion with linear (first argument) and angular (second argument) components
+            log.error("Cartesian Velocity Control is not tested in Franka Driver yet")
+            motion = CartesianVelocityMotion(Twist(position, quaternion), duration=Duration(500))
+        else:
+            log.error("Invalid Control Mode: recived "+ str(control_mode)+ "")
 
         self.robot.move(motion, asynchronous=True)
         time.sleep(0.01)
