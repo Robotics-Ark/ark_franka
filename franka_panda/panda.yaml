@@ -25,7 +25,11 @@ config:
     - 0.0
     - 0.0
     - 0.0
-  ee_index: 6
+    - 0.0
+    - 0.0
+  
+  merge_fixed_links: False
+  ee_index: 11
   joint_groups: 
     arm: 
       control_mode: "position"
@@ -38,7 +42,7 @@ config:
         - "panda_joint6"
         - "panda_joint7"
     gripper: 
-      control_mode: "velocity"
+      control_mode: "position"
       joints: 
         - "panda_finger_joint1"
     all: 
