@@ -70,6 +70,7 @@ class FrankaPanda(Robot):
         will be called at the fequency dictated in the config
         handles the control of the robot and the 
         '''
+        # print("======")
         if self.joint_group_command:
             cmd_dict = {}
             group_name = self.joint_group_command['name']
@@ -78,7 +79,8 @@ class FrankaPanda(Robot):
             self._joint_cmd_msg = None
             control_mode = self.joint_groups[group_name]["control_mode"]
             self.control_joint_group(control_mode, cmd_dict)
-        elif self.cartesian_position_control_command:
+
+        if self.cartesian_position_control_command:
             group_name = self.cartesian_position_control_command['name']
             control_mode = self.joint_groups[group_name]["control_mode"]
             end_effector_idx = self.robot_config.get("end_effector_idx", 6)
@@ -117,11 +119,12 @@ class FrankaPanda(Robot):
         }
 
     def _cartesian_position_command_callback(self, t, channel_name, msg): 
-        name, position, quaternion = unpack.task_space_command(msg)
+        name, position, quaternion, gripper = unpack.task_space_command(msg)
         self.cartesian_position_control_command = {
             "name": name,
             "position": position,
-            "quaternion": quaternion
+            "quaternion": quaternion,
+            "gripper": gripper
         }
 
     ####################################################
@@ -133,7 +136,8 @@ class FrankaPanda(Robot):
         self._driver.pass_cartesian_control_cmd(control_mode,
                                         position=cmd['position'],
                                        quaternion=cmd['quaternion'],
-                                       end_effector_idx=end_effector_idx)
+                                       end_effector_idx=end_effector_idx,
+                                       gripper=cmd.get('gripper', None))
 
     #####################################################
 

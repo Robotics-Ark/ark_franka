@@ -7,6 +7,7 @@ class FrankaPyBulletDriver(BulletRobotDriver):
 
     def pass_joint_group_control_cmd(self, control_mode: str, cmd: dict[str, float], **kwargs) -> None:
         # duplicate the last joint command for the gripper as there is no mechanical binding in the URDF
+        print("HELLO")
         if "panda_finger_joint1" in cmd:
             panda_finger_joint1 = cmd.get("panda_finger_joint1")
             cmd["panda_finger_joint2"] = panda_finger_joint1
@@ -23,7 +24,6 @@ class FrankaPyBulletDriver(BulletRobotDriver):
         @param kwargs Additional keyword arguments passed to joint control.
         @return ``None``
         """
-        print(f"Passing Cartesian control command with position: {position} and quaternion: {quaternion}")
         if not (len(position) == 3 and len(quaternion) == 4):
             raise ValueError("Position must be 3 elements and quaternion must be 4 elements.")
 
@@ -40,6 +40,15 @@ class FrankaPyBulletDriver(BulletRobotDriver):
         if joint_angles is None:
             raise ValueError("Inverse kinematics failed to compute joint angles.")
         
+        joint_angles = list(joint_angles)
+        # add gripper control if specified
+        if "gripper" in kwargs:
+            gripper_position = kwargs["gripper"]
+            if gripper_position is not None:
+                # Assuming the gripper is controlled by the last two joints
+                joint_angles[-2] = gripper_position
+                joint_angles[-1] = gripper_position  # Assuming the gripper has two joints
+
         self.client.setJointMotorControlArray(
             bodyUniqueId=self.ref_body_id,
             jointIndices=list(range(9)),  # Assuming 9 joints including gripper
