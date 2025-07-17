@@ -1,5 +1,5 @@
 from ark.system.pybullet.pybullet_robot_driver import BulletRobotDriver
-
+from ark.tools.log import log
 class FrankaPyBulletDriver(BulletRobotDriver):
 
     def __init__(self, component_name: str, component_config: dict[str, any] = None, client: bool = True) -> None:
@@ -29,15 +29,16 @@ class FrankaPyBulletDriver(BulletRobotDriver):
         end_effector_idx = kwargs.get("end_effector_idx")
 
         # Compute IK solution
-        joint_angles = self.client.calculateInverseKinematics(
-            bodyUniqueId=self.ref_body_id,
-            endEffectorLinkIndex=end_effector_idx,
-            targetPosition=position,
-            targetOrientation=quaternion
-        )
-
-        if joint_angles is None:
-            raise ValueError("Inverse kinematics failed to compute joint angles.")
+        try:
+            joint_angles = self.client.calculateInverseKinematics(
+                bodyUniqueId=self.ref_body_id,
+                endEffectorLinkIndex=end_effector_idx,
+                targetPosition=position,
+                targetOrientation=quaternion
+            )
+        except Exception as e:
+            log.error(f"Inverse kinematics failed: {e}")
+            return
         
         joint_angles = list(joint_angles)
         # add gripper control if specified
