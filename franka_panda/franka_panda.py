@@ -70,7 +70,6 @@ class FrankaPanda(Robot):
         will be called at the fequency dictated in the config
         handles the control of the robot and the 
         '''
-        # print("======")
         if self.joint_group_command:
             cmd_dict = {}
             group_name = self.joint_group_command['name']

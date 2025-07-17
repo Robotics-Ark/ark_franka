@@ -7,7 +7,6 @@ class FrankaPyBulletDriver(BulletRobotDriver):
 
     def pass_joint_group_control_cmd(self, control_mode: str, cmd: dict[str, float], **kwargs) -> None:
         # duplicate the last joint command for the gripper as there is no mechanical binding in the URDF
-        print("HELLO")
         if "panda_finger_joint1" in cmd:
             panda_finger_joint1 = cmd.get("panda_finger_joint1")
             cmd["panda_finger_joint2"] = panda_finger_joint1
