@@ -10,8 +10,9 @@ from ark.system.component.robot import Robot, robot_control
 from ark.system.driver.robot_driver import RobotDriver
 from franka_pybullet_driver import FrankaPyBulletDriver
 from ark.tools.log import log
-from arktypes import flag_t, joint_group_command_t, joint_state_t, task_space_command_t
+from arktypes import flag_t, joint_group_command_t, joint_state_t, pose_t, task_space_command_t
 from arktypes.utils import unpack, pack
+import numpy as np
 
 @dataclass
 class Drivers(Enum): 
@@ -52,14 +53,18 @@ class FrankaPanda(Robot):
         self.create_subscriber(self.cartesian_position_control_ch, task_space_command_t, self._cartesian_position_command_callback)
 
         if self.sim == True: 
-            self.publisher_name = self.name + "/joint_states/sim"
+            self.joint_states_pub = self.name + "/joint_states/sim"
+            self.ee_state_pub = self.name + "/ee_state/sim"
             self.component_channels_init({
-                self.publisher_name: joint_state_t
+                self.joint_states_pub: joint_state_t,
+                self.ee_state_pub: pose_t,
             })
         else:
-            self.publisher_name = self.name + "/joint_states"
+            self.joint_states_pub = self.name + "/joint_states"
+            self.ee_state_pub = self.name + "/ee_state"
             self.component_channels_init({
-                self.publisher_name: joint_state_t
+                self.joint_states_pub: joint_state_t,
+                self.ee_state_pub: pose_t,
             })
 
         self.joint_group_command = None
@@ -93,18 +98,30 @@ class FrankaPanda(Robot):
         Returns the current state of the robot.
         This method is called by the base class to get the state of the robot.
         """
-        return self.get_joint_positions()
+        ee_pose = self._driver.get_ee_pose()
+        joint_position = self.get_joint_positions()
+        return {
+            "joint_positions": joint_position,
+            "end_effector_pose": ee_pose,
+        }
 
     def pack_data(self, state: Dict[str, Any]) -> Dict[str, Any]:
-        msg = joint_state_t()
-        msg.n = len(state)
-        msg.name = list(state.keys())
-        msg.position = list(state.values())
-        msg.velocity = [0.0] * msg.n
-        msg.effort = [0.0] * msg.n
+
+        joint_state = state["joint_positions"]
+        ee_pose = state["end_effector_pose"]
+
+        joint_msg = joint_state_t()
+        joint_msg.n = len(joint_state)
+        joint_msg.name = list(joint_state.keys())
+        joint_msg.position = list(joint_state.values())
+        joint_msg.velocity = [0.0] * joint_msg.n
+        joint_msg.effort = [0.0] * joint_msg.n
+
+        ee_msg = pack.pose(np.array(ee_pose["position"]), np.array(ee_pose["orientation"]))
 
         return {
-            self.publisher_name: msg
+            self.joint_states_pub: joint_msg,
+            self.ee_state_pub: ee_msg
         }
     
     ####################################################

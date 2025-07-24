@@ -12,7 +12,14 @@ class FrankaPyBulletDriver(BulletRobotDriver):
             cmd["panda_finger_joint2"] = panda_finger_joint1
         super().pass_joint_group_control_cmd(control_mode, cmd, **kwargs)
         
-
+    def get_ee_pose(self) -> dict[str, float]:
+        """!Get the end-effector pose in the world frame."""
+        end_effector_idx = 6
+        position, orientation = self.client.getLinkState(self.ref_body_id, end_effector_idx)[:2]
+        return {
+            "position": position,
+            "orientation": orientation
+        }
     
     def pass_cartesian_control_cmd(self, control_mode: str, position, quaternion, **kwargs) -> None:
         """!Send a Cartesian control command by computing inverse kinematics.
