@@ -8,7 +8,8 @@ import pprint
 from ark.client.comm_infrastructure.base_node import main
 from ark.system.component.robot import Robot, robot_control
 from ark.system.driver.robot_driver import RobotDriver
-from ark_franka.franka_pybullet_driver import FrankaPyBulletDriver
+from franka_pybullet_driver import FrankaPyBulletDriver
+from ark.system.mujoco.mujoco_robot_driver import MujocoRobotDriver
 from ark.tools.log import log
 from arktypes import (
     flag_t,
@@ -24,6 +25,7 @@ import numpy as np
 @dataclass
 class Drivers(Enum):
     PYBULLET_DRIVER = FrankaPyBulletDriver
+    MUJOCO_DRIVER = MujocoRobotDriver
 
     try:
         from franka_driver import FrankaResearch3Driver
@@ -115,6 +117,7 @@ class FrankaPanda(Robot):
                 cmd_dict[joint] = goal
             self._joint_cmd_msg = None
             control_mode = self.joint_groups[group_name]["control_mode"]
+
             self.control_joint_group(control_mode, cmd_dict)
 
         if self.cartesian_position_control_command:
@@ -135,7 +138,11 @@ class FrankaPanda(Robot):
         Returns the current state of the robot.
         This method is called by the base class to get the state of the robot.
         """
-        ee_pose = self._driver.get_ee_pose()
+        # ee_pose = self._driver.get_ee_pose()
+        ee_pose = {
+            "position": [0, 0, 0],
+            "orientation": [1, 0, 0, 0],
+        }
         joint_position = self.get_joint_positions()
         return {
             "joint_positions": joint_position,
