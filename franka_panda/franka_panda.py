@@ -1,4 +1,3 @@
-
 from typing import Any, Dict, Optional, List
 from dataclasses import dataclass
 from enum import Enum
@@ -40,29 +39,62 @@ class FrankaPanda(Robot):
         #######################################
         ##     custom communication setup    ##
         #######################################
-        self._joint_cmd_msg, self._cartesian_cmd_msg =  None, None
-        
-        self.joint_group_command_ch = self.name + "/joint_group_command"
-        self.cartesian_position_control_ch = self.name + "/cartesian_command"
+        self._joint_cmd_msg, self._cartesian_cmd_msg = None, None
 
-        if self.sim:
-            self.joint_group_command_ch = self.joint_group_command_ch + "/sim"
-            self.cartesian_position_control_ch = self.cartesian_position_control_ch + "/sim"
+        observation_channels = global_config["observation_channels"]
+        action_channels = global_config["action_channels"]
+        namespace = global_config["namespace"]
 
-        self.create_subscriber(self.joint_group_command_ch, joint_group_command_t, self._joint_group_command_callback)
-        self.create_subscriber(self.cartesian_position_control_ch, task_space_command_t, self._cartesian_position_command_callback)
-
-        if self.sim == True: 
-            self.joint_states_pub = self.name + "/joint_states/sim"
-            self.ee_state_pub = self.name + "/ee_state/sim"
-            self.component_channels_init({
-                self.joint_states_pub: joint_state_t,
-                self.ee_state_pub: pose_t,
-            })
+        self.joint_group_command_ch = None
+        self.cartesian_position_control_ch = None
+        # Action channels
+        if action_channels is not None and len(action_channels) > 0:
+            for key in action_channels.keys():
+                if "joint_group_command" in key:
+                    self.joint_group_command_ch = key
+                if "cartesian_command" in key:
+                    self.cartesian_position_control_ch = key
         else:
-            self.joint_states_pub = self.name + "/joint_states"
-            self.ee_state_pub = self.name + "/ee_state"
-            self.component_channels_init({
+            self.joint_group_command_ch = f"{namespace}/" + self.name + "/joint_group_command"
+            self.cartesian_position_control_ch = f"{namespace}/" + self.name + "/cartesian_command"
+
+            if self.sim:
+                self.joint_group_command_ch = self.joint_group_command_ch + "/sim"
+                self.cartesian_position_control_ch = (
+                    self.cartesian_position_control_ch + "/sim"
+                )
+
+        if self.joint_group_command_ch:
+            self.create_subscriber(
+                self.joint_group_command_ch,
+                joint_group_command_t,
+                self._joint_group_command_callback,
+            )
+        if self.cartesian_position_control_ch:
+            self.create_subscriber(
+                self.cartesian_position_control_ch,
+                task_space_command_t,
+                self._cartesian_position_command_callback,
+            )
+
+        # Observation channels
+        if observation_channels is not None and len(observation_channels) > 0:
+            for key in observation_channels.keys():
+                if "joint_states" in key:
+                    self.joint_states_pub = key
+                if "ee_state" in key:
+                    self.ee_state_pub = key
+        else:
+            if self.sim == True:
+                self.joint_states_pub = f"{namespace}/" + self.name + "/joint_states/sim"
+                self.ee_state_pub = f"{namespace}/" + self.name + "/ee_state/sim"
+
+            else:
+                self.joint_states_pub = self.name + "/joint_states"
+                self.ee_state_pub = self.name + "/ee_state"
+
+        self.component_channels_init(
+            {
                 self.joint_states_pub: joint_state_t,
                 self.ee_state_pub: pose_t,
             })
@@ -91,7 +123,7 @@ class FrankaPanda(Robot):
             self.control_cartesian(control_mode, cmd=self.cartesian_position_control_command, end_effector_idx=end_effector_idx)
 
         self.joint_group_command = None
-        self.cartesian_position_control_command = None  
+        self.cartesian_position_control_command = None
 
     def get_state(self) -> Dict[str, Any]:
         """
@@ -140,7 +172,7 @@ class FrankaPanda(Robot):
             "name": name,
             "position": position,
             "quaternion": quaternion,
-            "gripper": gripper
+            "gripper": gripper,
         }
 
     ####################################################
