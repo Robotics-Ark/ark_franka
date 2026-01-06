@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+import importlib
 from enum import Enum
 from typing import Any, Dict
 
@@ -6,8 +6,6 @@ import numpy as np
 from ark.client.comm_infrastructure.base_node import main
 from ark.system.component.robot import Robot
 from ark.system.driver.robot_driver import RobotDriver
-from ark.tools.log import log
-from ark.utils import lazy
 from arktypes import (
     joint_group_command_t,
     joint_state_t,
@@ -16,19 +14,16 @@ from arktypes import (
 )
 from arktypes.utils import unpack, pack
 
-@dataclass
+
 class Drivers(Enum):
-    PYBULLET_DRIVER = lazy.franka_pybullet_driver.FrankaPyBulletDriver
-    ISAAC_DRIVER = lazy.franka_isaacsim_driver.FrankaIsaacDriver
+    PYBULLET_DRIVER = "franka_panda.franka_pybullet_driver.FrankaPyBulletDriver"
+    ISAAC_DRIVER = "franka_panda.franka_isaacsim_driver.FrankaIsaacDriver"
+    DRIVER = "franka_panda.FrankaResearch3Driver"
 
-    try:
-        from franka_driver import FrankaResearch3Driver
-
-        DRIVER = FrankaResearch3Driver
-    except ImportError:
-        log.warn(
-            "FrankaResearch3Driver is failing, OS might be incompatible with the Real Franka Panda Robot"
-        )
+    def load(self):
+        module_path, class_name = self.value.rsplit(".", 1)
+        module = importlib.import_module(module_path)
+        return getattr(module, class_name)
 
 
 class FrankaPanda(Robot):
