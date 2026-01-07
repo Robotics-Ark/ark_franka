@@ -19,6 +19,12 @@ class Drivers(Enum):
     PYBULLET_DRIVER = FrankaPyBulletDriver
 
     try:
+        from franka_newton_driver import FrankaNewtonDriver
+        NEWTON_DRIVER = FrankaNewtonDriver
+    except ImportError:
+        log.warn("FrankaNewtonDriver not available - Newton backend may not be installed")
+
+    try:
         from franka_driver import FrankaResearch3Driver
         DRIVER = FrankaResearch3Driver
     except ImportError:
