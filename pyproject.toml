@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "franka"
+version = "0.1"
+description = "Franka Panda robot driver for the ARK framework"
+readme = "README.md"
+requires-python = ">=3.10"
+
+dependencies = [
+    "ark",
+    "franky",
+    "numpy",
+    "scipy",
+]
+
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[tool.setuptools.packages.find]
+include = ["franka_panda"]
