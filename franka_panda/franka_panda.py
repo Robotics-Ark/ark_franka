@@ -138,7 +138,11 @@ class FrankaPanda(Robot):
         if self.cartesian_position_control_command:
             group_name = self.cartesian_position_control_command["name"]
             control_mode = self.joint_groups[group_name]["control_mode"]
-            end_effector_idx = self.robot_config.get("end_effector_idx", 6)
+            end_effector_idx = self.robot_config.get("end_effector_idx")
+            if end_effector_idx is None:
+                end_effector_idx = self.robot_config.get("ee_index")
+            if end_effector_idx is None:
+                end_effector_idx = self.robot_config.get("ee_link_index")
             self.control_cartesian(
                 control_mode,
                 cmd=self.cartesian_position_control_command,
