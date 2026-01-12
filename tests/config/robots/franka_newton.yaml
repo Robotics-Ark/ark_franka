@@ -1,0 +1,66 @@
+name: "panda"
+config:
+  source: "urdf"
+  urdf_path: "panda_with_gripper.urdf"
+  class_dir: "/home/doug/Documents/coding/side_projects/ARK/ark_franka/franka_panda"
+  frequency: 120                       # Matched to sim_frequency for speed
+  cartesian_max_joint_velocity: 8      # rad/s limit for IK-driven commands (increased)
+  cartesian_max_joint_step: 1.2        # rad per control tick (increased for better convergence)
+  cartesian_smoothing: 0.7             # 0..1, higher = more responsive (was causing steady-state error)
+  ik_iterations: 20                    # More iterations for better IK solution
+  base_position: [0, 0, 0]
+  base_orientation: [0, 0, 0, 1]  # x, y, z, w quaternion
+  use_fixed_base: true
+  floating: false
+  enable_self_collisions: false
+  collapse_fixed_joints: true
+  # Use URDF collision primitives (boxes for fingers) instead of visual meshes (STL)
+  # This ensures symmetric collision behavior for both finger links
+  parse_visuals_as_colliders: false
+  initial_configuration:
+    - 0.0      # panda_joint1
+    - -0.8     # panda_joint2
+    - 0.0      # panda_joint3
+    - -2.4     # panda_joint4
+    - 0.0      # panda_joint5
+    - 1.7      # panda_joint6
+    - 0.8      # panda_joint7
+    - 0.04     # panda_finger_joint1
+    - 0.04     # panda_finger_joint2
+  # End-effector link index (Newton body index for IK + ee_state).
+  # In this URDF with collapse_fixed_joints=true, `panda_link7` is body index 6 and
+  # the fingers follow (e.g., leftfinger=7). Using 6 ensures panda_joint7 affects the EE.
+  end_effector_idx: 6
+  ee_index: 6
+  # TCP offset from ee_index link frame to tool center point (between fingertips)
+  # With collapse_fixed_joints=true, the effective offset from wrist frame to
+  # fingertips is approximately 0.164m (empirically measured from link transforms)
+  ee_tcp_offset: [0.0, 0.0, 0.164]
+  joint_groups:
+    arm:
+      control_mode: "position"
+      joints:
+        - "panda_joint1"
+        - "panda_joint2"
+        - "panda_joint3"
+        - "panda_joint4"
+        - "panda_joint5"
+        - "panda_joint6"
+        - "panda_joint7"
+    gripper:
+      control_mode: "position"
+      joints:
+        - "panda_finger_joint1"
+        - "panda_finger_joint2"
+    all:
+      control_mode: "position"
+      joints:
+        - "panda_joint1"
+        - "panda_joint2"
+        - "panda_joint3"
+        - "panda_joint4"
+        - "panda_joint5"
+        - "panda_joint6"
+        - "panda_joint7"
+        - "panda_finger_joint1"
+        - "panda_finger_joint2"

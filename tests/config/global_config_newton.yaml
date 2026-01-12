@@ -1,0 +1,117 @@
+network:
+  registry_host: "127.0.0.1"
+  registry_port: 1234
+  lcm_network_bounces: 1  # ttl=1 allows localhost multicast (required for subscribers)
+
+simulator:
+  name: "franka_newton_simulator"
+  backend_type: "newton"                       # Use Newton physics backend
+  node_frequency: 120                          # Node update frequency in Hz (reduced for speed)
+  config:
+    connection_mode: "GUI"                     # "DIRECT" for headless testing (faster)
+    gravity: [0, 0, -9.81]                     # Gravity vector
+    sim_frequency: 120                         # Physics update frequency (reduced for speed)
+    substeps: 12                               # Increased for hydroelastic contact stability
+    solver: "mujoco"                           # MuJoCo solver for contact dynamics
+    solver_iterations: 10                      # Reduced from 20; MuJoCo uses newton_physics.mujoco.iterations
+    device: "cuda:0"                           # GPU device (optional)
+
+    # Newton-specific physics configuration
+    # Contact + control parameters (tuned for manipulation)
+    newton_physics:
+      # Robot collision defaults - use hydroelastic contacts for grasping
+      # Based on Newton's panda_hydro example which successfully demonstrates pick-and-place.
+      # Hydroelastic contacts use volumetric compliance (SDF-based) that prevents
+      # penetration much better than point-based rigid contacts with high stiffness.
+      robot_shape:
+        mu: 3.0                                # Higher friction for grip during dynamic motion
+        is_hydroelastic: true                  # Enable SDF hydroelastic contacts
+        k_hydro: 1.0e10                        # Hydroelastic stiffness
+        sdf_max_resolution: 64                 # SDF voxel resolution for collision meshes
+        contact_margin: 0.002                  # 2mm early contact detection (reduced to prevent sticking)
+        torsional_friction: 1.0                # Higher torsional friction for grip stability
+        rolling_friction: 1.0                  # Higher rolling friction for grip stability
+
+      # Keep legacy knob for older configs (mapped to ShapeConfig.mu if robot_shape.mu omitted)
+      robot_friction: 1.0
+
+      # Use unified collision pipeline for contact-rich mesh scenes (gripper + cube)
+      collision_pipeline:
+        type: "unified"
+        broad_phase_mode: "sap"                   # Changed from "explicit" - SAP detects ALL collision pairs automatically
+        rigid_contact_max_per_pair: 32           # Reduced from 100 for faster collision
+        reduce_contacts: true
+
+      # MuJoCo solver parameters (adapter reads these)
+      mujoco:
+        iterations: 16                           # Balance between speed and accuracy
+      joint_defaults:
+        mode: "TARGET_POSITION"                # Joint control mode
+        target_ke: 4000.0                      # Joint stiffness (increased for better tracking)
+        target_kd: 600.0                       # Joint damping (kd/ke=0.15, slightly underdamped for responsiveness)
+        limit_ke: 2000.0                       # Joint limit stiffness
+        limit_kd: 20.0                         # Joint limit damping
+        armature: 0.5                          # Rotor inertia
+        effort_limit: 100.0                    # Override URDF effort limits (wrist joints are otherwise too weak)
+        velocity_limit: 10.0                   # rad/s cap for joint targets
+        friction: 0.0                          # Joint friction (let PD dominate)
+
+      # Contact limit safety multiplier
+      # Newton calculates rigid_contact_max conservatively but underestimates
+      # complex mesh-mesh interactions (Franka Panda's 10 STL collision meshes).
+      # Multiplier provides headroom for contact-rich scenarios.
+      rigid_contact_multiplier: 6.0           # Reduced from 16.0 for faster memory allocation
+
+robots:
+  - "robots/franka_newton.yaml"                # Franka Panda robot configuration for Newton
+
+objects:
+  - name: "ground"
+    config:
+      # Using primitive box for MuJoCo compatibility (MuJoCo can't use ground_plane)
+      source: "primitive"
+      publish_ground_truth: false
+      base_position: [0.0, 0.0, -0.01]           # Center slightly below surface
+      base_orientation: [0.0, 0.0, 0.0, 1.0]
+      mass: 0.0                                  # Static body (infinite mass)
+      size: [20.0, 20.0, 0.02]                   # 20m x 20m x 2cm flat box
+      friction: 2.0                              # Ground friction coefficient
+
+  - name: "platform"
+    config:
+      # Platform/table for the cube to sit on (like panda_hydro example)
+      # 20cm x 20cm x 10cm box with top surface at z=0.10m (cube bottom)
+      source: "primitive"
+      publish_ground_truth: false
+      base_position: [0.45, 0.0, 0.05]           # Center at z=0.05m (top at z=0.10m)
+      base_orientation: [0.0, 0.0, 0.0, 1.0]
+      mass: 0.0                                  # Static body
+      size: [0.20, 0.20, 0.10]                   # 20cm x 20cm x 10cm platform
+      friction: 2.0                              # Platform friction
+      # Use hydroelastic for consistent contact with cube
+      is_hydroelastic: true
+      k_hydro: 1.0e11
+      sdf_max_resolution: 64
+
+  - name: "payload"
+    config:
+      publish_ground_truth: true              # Enable to monitor cube state
+      source: "primitive"
+      class_dir: "."
+      # Cube on elevated surface (like panda_hydro which uses 10cm table)
+      # Center at z=0.12m: bottom at z=0.10, top at z=0.14
+      # Grasp at z=0.12m is well above min_reachable_tcp_z (0.055m)
+      base_position: [0.45, 0.0, 0.12]
+      base_orientation: [0.0, 0.0, 0.0, 1.0]  # Quaternion (x, y, z, w)
+      mass: 0.05                               # Lighter cube for easier grasping
+      size: [0.04, 0.04, 0.04]                # 4cm cube
+      armature: 0.01                          # Inertia regularization for Featherstone stability
+      # Contact parameters for grasping
+      is_hydroelastic: true                   # Enable SDF hydroelastic contacts
+      k_hydro: 1.0e10                         # Hydroelastic stiffness
+      sdf_max_resolution: 64                  # SDF voxel resolution
+      contact_margin: 0.002                   # 2mm early contact detection (reduced to prevent sticking)
+      friction: 3.0                           # High friction for firm grip
+      restitution: 0.0                        # No bounce
+      rolling_friction: 1.0                   # High rolling friction for grip stability
+      torsional_friction: 1.0                 # High torsional friction for grip stability
