@@ -2,7 +2,7 @@ name: "panda"
 config:
   source: "urdf"
   urdf_path: "panda_with_gripper.urdf"
-  class_dir: "/home/doug/Documents/coding/side_projects/ARK/ark_franka/franka_panda"
+  class_dir: "/home/refinath/ark/ark_franka/franka_panda"
   frequency: 120                       # Matched to sim_frequency for speed
   cartesian_max_joint_velocity: 8      # rad/s limit for IK-driven commands (increased)
   cartesian_max_joint_step: 1.2        # rad per control tick (increased for better convergence)

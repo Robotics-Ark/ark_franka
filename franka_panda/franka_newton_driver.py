@@ -99,7 +99,9 @@ class FrankaNewtonDriver(NewtonRobotDriver):
         )
 
         # Get shape flags and body associations
-        if not hasattr(self.builder, "shape_flags") or not hasattr(self.builder, "shape_body"):
+        if not hasattr(self.builder, "shape_flags") or not hasattr(
+            self.builder, "shape_body"
+        ):
             log.warning(
                 f"FrankaNewtonDriver '{self.component_name}': "
                 f"Builder missing shape_flags/shape_body - cannot configure hydroelastic"
@@ -109,7 +111,9 @@ class FrankaNewtonDriver(NewtonRobotDriver):
         # Enable HYDROELASTIC flag on finger shapes, disable on others
         try:
             hydroelastic_flag = newton.ShapeFlags.HYDROELASTIC
-            log.info(f"FrankaNewtonDriver: HYDROELASTIC flag value = {hydroelastic_flag}")
+            log.info(
+                f"FrankaNewtonDriver: HYDROELASTIC flag value = {hydroelastic_flag}"
+            )
         except AttributeError:
             log.warning(
                 f"FrankaNewtonDriver '{self.component_name}': "
@@ -131,7 +135,11 @@ class FrankaNewtonDriver(NewtonRobotDriver):
             if body_idx < pre_body_count:
                 continue  # Skip shapes from other robots/objects
 
-            body_name = self.builder.body_key[body_idx] if body_idx < len(self.builder.body_key) else f"body_{body_idx}"
+            body_name = (
+                self.builder.body_key[body_idx]
+                if body_idx < len(self.builder.body_key)
+                else f"body_{body_idx}"
+            )
             flags_before = self.builder.shape_flags[shape_idx]
 
             if body_idx in finger_body_indices:
@@ -184,7 +192,8 @@ class FrankaNewtonDriver(NewtonRobotDriver):
         # Find shapes belonging to finger bodies
         shape_body = self._model.shape_body.numpy()
         finger_shapes = [
-            idx for idx, body in enumerate(shape_body)
+            idx
+            for idx, body in enumerate(shape_body)
             if body in self._finger_body_indices
         ]
 
@@ -195,10 +204,12 @@ class FrankaNewtonDriver(NewtonRobotDriver):
 
         if is_releasing:
             # Disable collisions on finger shapes
-            for idx in finger_shapes:
-                shape_flags[idx] &= ~_COLLIDE_FLAG
+            # for idx in finger_shapes: # TODO
+            #     shape_flags[idx] &= ~_COLLIDE_FLAG
             self._collision_disabled = True
-            self._collision_reenable_time = time.time() + self._collision_reenable_duration
+            self._collision_reenable_time = (
+                time.time() + self._collision_reenable_duration
+            )
             log.info(
                 f"FrankaNewtonDriver '{self.component_name}': "
                 f"Disabled finger collisions on {len(finger_shapes)} shapes "
@@ -206,8 +217,8 @@ class FrankaNewtonDriver(NewtonRobotDriver):
             )
         else:
             # Re-enable collisions on finger shapes
-            for idx in finger_shapes:
-                shape_flags[idx] |= _COLLIDE_FLAG
+            # for idx in finger_shapes: # TODO
+            #     shape_flags[idx] |= _COLLIDE_FLAG
             self._collision_disabled = False
             log.info(
                 f"FrankaNewtonDriver '{self.component_name}': "
@@ -231,7 +242,9 @@ class FrankaNewtonDriver(NewtonRobotDriver):
         gripper_value = None
         for joint_name, value in cmd.items():
             if "finger" in joint_name.lower():
-                gripper_value = float(value) if not isinstance(value, Sequence) else float(value[0])
+                gripper_value = (
+                    float(value) if not isinstance(value, Sequence) else float(value[0])
+                )
                 break
 
         if gripper_value is None:
@@ -306,7 +319,11 @@ class FrankaNewtonDriver(NewtonRobotDriver):
         if auto is not None and _looks_like_wrong_ee(requested):
             view = getattr(self, "_articulation_view", None)
             names = getattr(view, "body_names", None) or []
-            requested_name = str(names[requested]) if 0 <= requested < len(names) else "<out-of-range>"
+            requested_name = (
+                str(names[requested])
+                if 0 <= requested < len(names)
+                else "<out-of-range>"
+            )
             auto_name = str(names[auto]) if 0 <= auto < len(names) else "<unknown>"
             log.warning(
                 "FrankaNewtonDriver: EE link index %s (%s) looks incorrect; using auto-detected %s (%s). "
@@ -363,7 +380,9 @@ class FrankaNewtonDriver(NewtonRobotDriver):
 
         def is_gripper_joint(joint_name: str) -> bool:
             lowered = joint_name.lower()
-            return any(token in lowered for token in ("finger", "gripper", "grip", "jaw"))
+            return any(
+                token in lowered for token in ("finger", "gripper", "grip", "jaw")
+            )
 
         actuation_joints = [name for name in self._joint_names if is_actuated(name)]
         gripper_joints = [name for name in actuation_joints if is_gripper_joint(name)]
@@ -414,7 +433,7 @@ class FrankaNewtonDriver(NewtonRobotDriver):
 
         default_pose = {
             "position": [0.0, 0.0, 0.0],
-            "orientation": [0.0, 0.0, 0.0, 1.0]
+            "orientation": [0.0, 0.0, 0.0, 1.0],
         }
 
         if self._articulation_view is None:
@@ -451,17 +470,27 @@ class FrankaNewtonDriver(NewtonRobotDriver):
 
             # Log all link positions on first call for debugging
             if self._get_ee_log_count == 1:
-                log.info(f"FrankaNewtonDriver: Link transforms shape: {transforms_np.shape}")
+                log.info(
+                    f"FrankaNewtonDriver: Link transforms shape: {transforms_np.shape}"
+                )
                 for i in range(transforms_np.shape[1]):
                     pos = transforms_np[0, i, :3]
-                    log.info(f"  Link {i}: pos=[{pos[0]:.3f}, {pos[1]:.3f}, {pos[2]:.3f}]")
-                log.info(f"  Using ee_link_index={ee_link_index}, tcp_offset={tcp_offset}")
-                log.info(f"  Link pos: [{link_pos[0]:.3f}, {link_pos[1]:.3f}, {link_pos[2]:.3f}]")
-                log.info(f"  TCP pos:  [{tcp_pos[0]:.3f}, {tcp_pos[1]:.3f}, {tcp_pos[2]:.3f}]")
+                    log.info(
+                        f"  Link {i}: pos=[{pos[0]:.3f}, {pos[1]:.3f}, {pos[2]:.3f}]"
+                    )
+                log.info(
+                    f"  Using ee_link_index={ee_link_index}, tcp_offset={tcp_offset}"
+                )
+                log.info(
+                    f"  Link pos: [{link_pos[0]:.3f}, {link_pos[1]:.3f}, {link_pos[2]:.3f}]"
+                )
+                log.info(
+                    f"  TCP pos:  [{tcp_pos[0]:.3f}, {tcp_pos[1]:.3f}, {tcp_pos[2]:.3f}]"
+                )
 
             return {
-                "position": tcp_pos.tolist(),           # TCP position in world frame
-                "orientation": link_quat.tolist()       # qx, qy, qz, qw quaternion
+                "position": tcp_pos.tolist(),  # TCP position in world frame
+                "orientation": link_quat.tolist(),  # qx, qy, qz, qw quaternion
             }
 
         except Exception as e:
@@ -473,10 +502,15 @@ class FrankaNewtonDriver(NewtonRobotDriver):
 
     def _ensure_ik_solver(self, end_effector_idx: int) -> bool:
         if self._model is None:
-            log.warning("FrankaNewtonDriver: IK unavailable - model not initialized yet")
+            log.warning(
+                "FrankaNewtonDriver: IK unavailable - model not initialized yet"
+            )
             return False
 
-        if getattr(self, "_ik_solver", None) is not None and getattr(self, "_ik_end_effector_idx", None) == end_effector_idx:
+        if (
+            getattr(self, "_ik_solver", None) is not None
+            and getattr(self, "_ik_end_effector_idx", None) == end_effector_idx
+        ):
             return True
 
         device = self._model.device
@@ -487,8 +521,12 @@ class FrankaNewtonDriver(NewtonRobotDriver):
         self._tcp_offset = tcp_offset
         log.info(f"FrankaNewtonDriver: Using TCP offset: {tcp_offset}")
 
-        self._ik_target_pos = wp.array([wp.vec3(0.0, 0.0, 0.0)], dtype=wp.vec3, device=device)
-        self._ik_target_rot = wp.array([wp.vec4(0.0, 0.0, 0.0, 1.0)], dtype=wp.vec4, device=device)
+        self._ik_target_pos = wp.array(
+            [wp.vec3(0.0, 0.0, 0.0)], dtype=wp.vec3, device=device
+        )
+        self._ik_target_rot = wp.array(
+            [wp.vec4(0.0, 0.0, 0.0, 1.0)], dtype=wp.vec4, device=device
+        )
 
         # NOTE: Do NOT use link_offset here - Newton's IK applies it in world frame,
         # but we need it in link-local frame (rotates with gripper orientation).
@@ -509,8 +547,12 @@ class FrankaNewtonDriver(NewtonRobotDriver):
             weight=10.0,
         )
 
-        self._ik_joint_q_in = wp.zeros((1, self._model.joint_coord_count), dtype=wp.float32, device=device)
-        self._ik_joint_q_out = wp.zeros((1, self._model.joint_coord_count), dtype=wp.float32, device=device)
+        self._ik_joint_q_in = wp.zeros(
+            (1, self._model.joint_coord_count), dtype=wp.float32, device=device
+        )
+        self._ik_joint_q_out = wp.zeros(
+            (1, self._model.joint_coord_count), dtype=wp.float32, device=device
+        )
 
         self._ik_solver = ik.IKSolver(
             model=self._model,
@@ -560,7 +602,9 @@ class FrankaNewtonDriver(NewtonRobotDriver):
         # Call parent implementation
         super().pass_joint_group_control_cmd(control_mode, cmd, **kwargs)
 
-    def pass_cartesian_control_cmd(self, control_mode: str, position, quaternion, **kwargs) -> None:
+    def pass_cartesian_control_cmd(
+        self, control_mode: str, position, quaternion, **kwargs
+    ) -> None:
         """Send a Cartesian control command by computing inverse kinematics."""
         if not hasattr(self, "_cart_cmd_log_count"):
             self._cart_cmd_log_count = 0
@@ -585,14 +629,20 @@ class FrankaNewtonDriver(NewtonRobotDriver):
                 f"pos=[{position[0]:.3f}, {position[1]:.3f}, {position[2]:.3f}]"
             )
         if control_mode.lower() != "position":
-            log.warning("FrankaNewtonDriver: Cartesian control only supports position mode")
+            log.warning(
+                "FrankaNewtonDriver: Cartesian control only supports position mode"
+            )
             return
 
         if not (len(position) == 3 and len(quaternion) == 4):
-            log.warning("FrankaNewtonDriver: position must be 3 elements and quaternion must be 4 elements")
+            log.warning(
+                "FrankaNewtonDriver: position must be 3 elements and quaternion must be 4 elements"
+            )
             return
 
-        end_effector_idx = self._resolve_end_effector_idx(kwargs.get("end_effector_idx"))
+        end_effector_idx = self._resolve_end_effector_idx(
+            kwargs.get("end_effector_idx")
+        )
         if not self._ensure_ik_solver(end_effector_idx):
             return
 
@@ -622,7 +672,9 @@ class FrankaNewtonDriver(NewtonRobotDriver):
             self._ik_joint_q_in.assign(np.array([current_joint_q], dtype=np.float32))
 
         ik_iterations = int(self.config.get("ik_iterations", 24))
-        self._ik_solver.step(self._ik_joint_q_in, self._ik_joint_q_out, iterations=ik_iterations)
+        self._ik_solver.step(
+            self._ik_joint_q_in, self._ik_joint_q_out, iterations=ik_iterations
+        )
 
         joint_positions = self._ik_joint_q_out.numpy()[0]
 
@@ -663,7 +715,9 @@ class FrankaNewtonDriver(NewtonRobotDriver):
                                 f"FrankaNewtonDriver: TCP offset={self._tcp_offset}, quat={current_quat}"
                             )
                 except Exception as e:
-                    log.warning(f"FrankaNewtonDriver: Could not get link transform: {e}")
+                    log.warning(
+                        f"FrankaNewtonDriver: Could not get link transform: {e}"
+                    )
         control_hz = float(self.config.get("frequency", 240.0))
         control_dt = 1.0 / control_hz if control_hz > 0 else 1.0 / 240.0
         max_vel = self.config.get("cartesian_max_joint_velocity", None)
@@ -697,7 +751,9 @@ class FrankaNewtonDriver(NewtonRobotDriver):
         if not arm_joints:
             arm_joints = self._resolve_group_joints(joint_groups, "all")
         if not arm_joints:
-            log.warning("FrankaNewtonDriver: No arm joint group configured; cannot apply IK solution")
+            log.warning(
+                "FrankaNewtonDriver: No arm joint group configured; cannot apply IK solution"
+            )
             return
 
         cmd = {}
@@ -737,5 +793,7 @@ class FrankaNewtonDriver(NewtonRobotDriver):
                 cmd[joint_name] = float(gripper)
 
         if self._cart_cmd_log_count <= 5 or self._cart_cmd_log_count % 50 == 0:
-            log.info(f"FrankaNewtonDriver: IK result -> {len(cmd)} joint targets: {list(cmd.values())[:7]}")
+            log.info(
+                f"FrankaNewtonDriver: IK result -> {len(cmd)} joint targets: {list(cmd.values())[:7]}"
+            )
         self.pass_joint_group_control_cmd("position", cmd)
